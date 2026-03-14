@@ -1,0 +1,7 @@
+streamlit
+borsapy
+pandas
+plotly
+pytz
+requests
+apscheduler
