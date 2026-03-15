@@ -92,7 +92,18 @@ FALLBACK_TICKERS = sorted(set([
     "SASA","SAHOL","TCELL","TOASO","ARCLK","TTKOM","SISE","ENKAI",
     "KOZAL","KOZA1","DOHOL","VESTL","AEFES","BRISA","GUBRF","OTKAR",
     "AGHOL","ALARK","KRDMD","NETAS","ALKIM","CIMSA","DOAS","HEKTS",
-    "KORDS","OYAKC","TKFEN","TRKCM","TURSG","ZOREN","ZORLU","MNDRS","ODAS",
+    "KORDS","OYAKC","TKFEN","TRKCM","TURSG","ZOREN","ZORLU","MNDRS","ODAS","YEO","BERA","BRKO","CIMSA","DOAS","ECILC","EGEEN",
+"EUPWR","GESAN","ISMEN","ISGYO","KAREL","KARSN",
+"LIDER","LINK","MARTI","NATEN","NTHOL","OSMEN",
+"PAMEL","RAYSG","ROYAL","RYSAS","SANFM","SELEC",
+"SKBNK","SNPAM","SUWEN","TABGD","TEZOL","TKFEN",
+"TKNSA","TLMAN","TOASO","TSPOR","TTKOM","TUCLK",
+"ULUFA","USAK","VBTYZ","YATAS","YGYO","YUNSA",
+"HALKB","VAKBN","SASA","TCELL","ARCLK","SISE",
+"ENKAI","KOZAL","KOZA1","DOHOL","VESTL","AEFES",
+"BRISA","GUBRF","OTKAR","AGHOL","ALARK","KRDMD",
+"NETAS","ALKIM","HEKTS","KORDS","OYAKC","TRKCM",
+"TURSG","ZOREN","ZORLU","MNDRS","ODAS","EKGYO",
 ]))
 
 
@@ -998,3 +1009,16 @@ elif sayfa == "⚡ Hızlı Lookup":
             st.metric("BIST100", f"{xu_fiyat}", f"{ok}%{abs(xu_deg):.2f}")
         except Exception:
             st.metric("BIST100", "—")
+          # ─────────────────────────────────────────────────────
+# FOOTER
+# ─────────────────────────────────────────────────────
+st.divider()
+st.markdown("""
+<div style='text-align:center;padding:16px;color:#444d56;font-size:0.8rem'>
+  🦅 <b style='color:#00ff8844'>Gümüş Avcısı</b> — BIST Intraday Scanner &nbsp;|&nbsp;
+  Yapay Zeka Destekli Analiz &nbsp;|&nbsp;
+  <span style='color:#cc785c'>Claude (Anthropic)</span> işbirliği ile geliştirilmiştir 🤖
+  <br>
+  <span style='font-size:0.72rem'>⚠️ Yatırım tavsiyesi değildir. Tüm kararlar yatırımcıya aittir.</span>
+</div>
+""", unsafe_allow_html=True)
