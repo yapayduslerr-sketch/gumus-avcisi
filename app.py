@@ -411,6 +411,69 @@ def ind_bollinger(close: pd.Series, p: int = 20):
         ust = sma + 2*std; alt = sma - 2*std
         gen = float(((ust-alt)/sma).iloc[-1]*100)
         return round(gen, 2), gen < 3.5
+      def ind_onceki_gun_seviyeleri(df: pd.DataFrame) -> dict:
+    """Önceki günün High/Low/Close seviyeleri."""
+    try:
+        bugun = df.index.date[-1]
+        onceki_gunler = sorted({d for d in df.index.date if d < bugun})
+        if not onceki_gunler:
+            return {"pdh": 0, "pdl": 0, "pdc": 0}
+        onceki = onceki_gunler[-1]
+        df_o = df[df.index.date == onceki]
+        return {
+            "pdh": round(float(df_o["high"].max()), 2),
+            "pdl": round(float(df_o["low"].min()), 2),
+            "pdc": round(float(df_o["close"].iloc[-1]), 2),
+        }
+    except Exception:
+        return {"pdh": 0, "pdl": 0, "pdc": 0}
+
+def ind_gap_tespiti(df: pd.DataFrame) -> dict:
+    """Açılış boşluğu (gap) tespiti."""
+    try:
+        bugun = df.index.date[-1]
+        df_b = df[df.index.date == bugun].sort_index()
+        onceki_gunler = sorted({d for d in df.index.date if d < bugun})
+        if not onceki_gunler or df_b.empty:
+            return {"gap_var": False, "gap_pct": 0, "gap_yon": "YOK"}
+        onceki = onceki_gunler[-1]
+        df_o = df[df.index.date == onceki]
+        onceki_kapanis = float(df_o["close"].iloc[-1])
+        bugun_acilis = float(df_b["open"].iloc[0])
+        gap_pct = round(((bugun_acilis - onceki_kapanis) / onceki_kapanis) * 100, 2)
+        if abs(gap_pct) < 0.5:
+            return {"gap_var": False, "gap_pct": gap_pct, "gap_yon": "YOK"}
+        return {
+            "gap_var": True,
+            "gap_pct": gap_pct,
+            "gap_yon": "YUKARI" if gap_pct > 0 else "ASAGI",
+            "onceki_kapanis": onceki_kapanis,
+            "bugun_acilis": bugun_acilis,
+        }
+    except Exception:
+        return {"gap_var": False, "gap_pct": 0, "gap_yon": "YOK"}
+
+def ind_poc(df: pd.DataFrame) -> float:
+    """Point of Control — en fazla hacim işlem gören fiyat seviyesi."""
+    try:
+        bugun = df.index.date[-1]
+        df_b = df[df.index.date == bugun].sort_index()
+        if df_b.empty:
+            return 0.0
+        fiyat_min = float(df_b["low"].min())
+        fiyat_max = float(df_b["high"].max())
+        if fiyat_max <= fiyat_min:
+            return float(df_b["close"].iloc[-1])
+        bins = 20
+        aralik = (fiyat_max - fiyat_min) / bins
+        hacim_profil = {}
+        for _, row in df_b.iterrows():
+            seviye = round(fiyat_min + round((float(row["close"]) - fiyat_min) / aralik) * aralik, 2)
+            hacim_profil[seviye] = hacim_profil.get(seviye, 0) + float(row["volume"])
+        poc = max(hacim_profil, key=hacim_profil.get)
+        return round(poc, 2)
+    except Exception:
+        return 0.0
 
 def aksiyon_etiketi(puan: int, rvol: float):
     if puan >= 8 and rvol >= 1.5:
@@ -464,6 +527,24 @@ def analiz_et(
     try: rvol   = ind_rvol(df, df_b)
     except Exception: rvol = 1.0
     try: bb_gen, squeeze = ind_bollinger(close)
+      try: seviyeler = ind_onceki_gun_seviyeleri(df)
+    except Exception: seviyeler = {"pdh": 0, "pdl": 0, "pdc": 0}
+    try: gap = ind_gap_tespiti(df)
+    except Exception: gap = {"gap_var": False, "gap_pct": 0, "gap_yon": "YOK"}
+    try: poc = ind_poc(df)
+    except Exception: poc = 0.0
+
+    pdh = seviyeler["pdh"]
+    pdl = seviyeler["pdl"]
+
+    # Yapısal seviye bonusları
+    if pdh > 0 and fiyat > pdh:
+        puan += 1  # Önceki gün high'ı kırdı — güçlü kırılım
+    if poc > 0 and abs(fiyat - poc) / fiyat < 0.005:
+        puan += 1  # POC yakınında — yüksek likidite bölgesi
+    if gap.get("gap_var") and gap.get("gap_yon") == "YUKARI":
+        puan += 1  # Yukari gap — kurumsal alım sinyali
+    puan = min(puan, 10)
     except Exception: bb_gen, squeeze = 0.0, False
 
     orb_df = df_b.head(ORB_BARS)
@@ -517,7 +598,8 @@ def analiz_et(
         ror=round(hedef_pct/stop_pct, 2) if stop_pct > 0 else 0,
         olasilik=olasilik,
         etiket=etiket, etiket_cls=etiket_cls,
-        df=df, df_bugun=df_b,
+        df=df, df_bugun=df_b,pdh=pdh, pdl=pdl, poc=poc,
+        gap=gap,
     )
 
 
@@ -591,6 +673,9 @@ def mum_grafigi(df, ticker, vwap_val, orb_h, orb_l, giris, hedef, stop) -> go.Fi
         (orb_l,  "#7c9fff", f"ORB L {orb_l:.2f}"),
         (hedef,  "#00ff88", f"Hedef {hedef:.2f}"),
         (stop,   "#ff4d4d", f"Stop {stop:.2f}"),
+      (sonuc.get("pdh", 0), "#38bdf8", f"PDH {sonuc.get('pdh',0):.2f}"),
+        (sonuc.get("pdl", 0), "#e879f9", f"PDL {sonuc.get('pdl',0):.2f}"),
+        (sonuc.get("poc", 0), "#ffd700", f"POC {sonuc.get('poc',0):.2f}"),
     ]:
         fig.add_hline(y=val, line_color=col, line_dash="dash",
                       annotation_text=lbl, annotation_font_color=col, row=1, col=1)
@@ -816,6 +901,12 @@ if sayfa == "🔍 Hisse Analizi":
           {sonuc['stop']:.2f} TL<br>
           <span style='font-size:0.75rem'>-%{sonuc['stop_pct']:.2f}</span></td></tr>
     <tr><td style='color:#8b949e;padding:3px 0'>R/R</td>
+    <tr><td style='color:#8b949e;padding:3px 0'>PDH</td>
+        <td style='text-align:right;color:#38bdf8;font-weight:700'>{sonuc['pdh']:.2f}</td></tr>
+    <tr><td style='color:#8b949e;padding:3px 0'>PDL</td>
+        <td style='text-align:right;color:#e879f9;font-weight:700'>{sonuc['pdl']:.2f}</td></tr>
+    <tr><td style='color:#8b949e;padding:3px 0'>POC</td>
+        <td style='text-align:right;color:#ffd700;font-weight:700'>{sonuc['poc']:.2f}</td></tr>
         <td style='text-align:right;color:#ffd700;font-weight:700'>1:{sonuc['ror']}</td></tr>
     <tr><td style='color:#8b949e;padding:3px 0'>Olasılık</td>
         <td style='text-align:right;color:#ffd700;font-weight:700'>%{sonuc['olasilik']}</td></tr>
