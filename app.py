@@ -182,6 +182,9 @@ def telegram_test(token: str, chat_id: str) -> tuple:
 
 def sinyal_mesaji_kisa(s: dict) -> str:
     ok = "▲" if s["degisim"] >= 0 else "▼"
+    gap_satir = ""
+    if s.get("gap", {}).get("gap_var"):
+        gap_satir = f"⚡ GAP: {s['gap']['gap_yon']} %{abs(s['gap']['gap_pct']):.2f}\n"
     return (
         f"🦅 <b>Gümüş Avcısı</b> | {datetime.now(TURKEY_TZ).strftime('%H:%M')}\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
@@ -190,6 +193,8 @@ def sinyal_mesaji_kisa(s: dict) -> str:
         f"🟢 Giriş: {s['giris']:.2f}  🎯 Hedef: {s['hedef']:.2f}  🛑 Stop: {s['stop']:.2f}\n"
         f"⚖️ R/R: 1:{s['ror']}  |  Olasılık: %{s['olasilik']}\n"
         f"🔊 RVOL: x{s['rvol']}  📊 RSI: {s['rsi']}\n"
+        f"📐 PDH: {s.get('pdh',0):.2f} | PDL: {s.get('pdl',0):.2f} | POC: {s.get('poc',0):.2f}\n"
+        f"{gap_satir}"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
         f"⚠️ Taramadır, yatırım tavsiyesi değildir."
     )
