@@ -197,6 +197,7 @@ def sinyal_mesaji_kisa(s: dict) -> str:
         f"{gap_satir}"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
         f"⚠️ Taramadır, yatırım tavsiyesi değildir."
+      mesaj += "\n\n📊 Dashboard: https://clawbot-ui.vercel.app"
     )
 
 # ─────────────────────────────────────────────────────
