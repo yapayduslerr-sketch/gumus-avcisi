@@ -187,37 +187,39 @@ def ind_vwap_series(df):
 
 def ind_vwap(df):
     return round(float(ind_vwap_series(df).iloc[-1]), 2)
-
-
-def ind_rvol(df_tam, df_bugun):
-    try:
-        bugun = df_bugun.index.date[0]
-        n = len(df_bugun)
-        onceki = sorted({d for d in df_tam.index.date if d < bugun})[-3:]
-        if not onceki:
-            return 1.0
-        orts = []
-        for g in onceki:
-            d = df_tam[df_tam.index.date == g].sort_index()
-            if len(d) >= n:
-                orts.append(float(d["volume"].iloc[:n].sum()))
-        if not orts:
-            return 1.0
-        return round(float(df_bugun["volume"].sum()) / (sum(orts) / len(orts)), 2)
-    except Exception:
-        vol = df_tam["volume"]
-        if len(vol) < 27:
-            return 1.0
-        ort = float(vol.iloc[-27:-1].mean())
-        return round(float(vol.iloc[-1]) / ort, 2) if ort > 0 else 1.0
-
-
-def ind_bollinger(close, p=20):
-    try:
-        bb = bp.calculate_bollinger_bands(close, period=p)
-        u = float(bb["upper"].iloc[-1])
-        l = float(bb["lower"].iloc[-1])
-        m = float(bb["middle"].iloc[-1])
+def zamanli_tarama_yap(token: str, chat_id: str,
+                        rvol_esik: float, rsi_alt: int, rsi_ust: int, min_puan: int):
+    """Scheduler'ın çağırdığı fonksiyon — arka planda çalışır."""
+    tickers = FALLBACK_TICKERS[:60]
+    sonuclar = paralel_tara(tickers, rvol_esik, rsi_alt, rsi_ust, min_puan)
+    if not sonuclar:
+        msg = "Gumus Avcisi - Sinyal bulunamadi"
+        telegram_gonder(token, chat_id, msg)
+        return
+    zaman = datetime.now(TURKEY_TZ).strftime("%d.%m.%Y %H:%M")
+    ozet = "Gumus Avcisi - Tarama: " + zaman + "\n"
+    ozet += str(len(sonuclar)) + " sinyal\n\n"
+    for i, s in enumerate(sonuclar[:5], 1):
+        ok = "+" if s["degisim"] >= 0 else "-"
+        ozet += str(i) + ". " + s["ticker"] + " " + ok
+        ozet += str(round(abs(s["degisim"]),2)) + "% Skor:"
+        ozet += str(s["puan"]) + "/10\n"
+        ozet += "Giris:" + str(s["giris"]) + " Hedef:"
+        ozet += str(s["hedef"]) + " Stop:" + str(s["stop"]) + "\n"
+    telegram_gonder(token, chat_id, ozet)
+    time.sleep(2)
+    for i, s in enumerate(sonuclar[:5], 1):
+        ok = "+" if s["degisim"] >= 0 else "-"
+        msg = str(i) + ". " + s["ticker"] + " " + ok
+        msg += str(round(abs(s["degisim"]),2)) + "%\n"
+        msg += "Fiyat:" + str(s["fiyat"]) + " Skor:"
+        msg += str(s["puan"]) + "/10\n"
+        msg += "Giris:" + str(s["giris"]) + "\n"
+        msg += "Hedef:" + str(s["hedef"]) + "\n"
+        msg += "Stop:" + str(s["stop"]) + "\n"
+        msg += "RR:1:" + str(s["ror"])
+        telegram_gonder(token, chat_id, msg)
+        time.sleep(1.5)
         gen = (u - l) / m * 100 if m else 0
         return round(gen, 2), gen < 3.5
     except Exception:
