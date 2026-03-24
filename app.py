@@ -1,8 +1,8 @@
 """
-╔══════════════════════════════════════════════════════╗
-║   Gümüş Avcısı Elite v5.0 — BIST Intraday Scanner  ║
-║   Streamlit + borsapy  |  HuggingFace Space         ║
-╚══════════════════════════════════════════════════════╝
+╔═════════════════════════════════════════════════════╗
+║  Gümüş Avcısı Elite v5.0 — BIST Gün İçi Tarayıcı  ║
+║  Streamlit + borsapy | HuggingFace Space            ║
+╚═════════════════════════════════════════════════════╝
 """
 
 import streamlit as st
@@ -20,7 +20,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 st.set_page_config(
-    page_title="Gümüş Avcısı | BIST Scanner",
+    page_title="Gümüş Avcısı | BIST Tarayıcı",
     page_icon="🦅",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -44,26 +44,26 @@ st.markdown("""
 
 TURKEY_TZ = pytz.timezone("Europe/Istanbul")
 
-ORB_BARS     = 6
-STOP_ATR     = 1.0
-HEDEF_ATR    = 2.0
+ORB_BARS = 6
+STOP_ATR = 1.0
+HEDEF_ATR = 2.0
 MAX_STOP_PCT = 2.5
-MIN_HAREKET  = 0.4
-PARALEL_IS   = 8
+MIN_HAREKET = 0.4
+PARALEL_IS = 8
 
 FALLBACK_TICKERS = sorted(set([
-    "LOGO","ARDYZ","KFEIN","HTTBT","MIATK","FORTE","SMART","MTRKS","INDES","REEDR",
-    "ASELS","KONTR","TTRAK","FROTO","TUSAS","KATMR",
-    "THYAO","PGSUS","TAVHL","CLEBI","PASEU",
-    "ASTOR","ENJSA","GWIND","AKSEN","ENERY","ORGE","CANTE","ALFAS",
-    "ISCTR","AKBNK","GARAN","YKBNK","TSKB","ALBRK","KCHOL","SAHOL","GOZDE",
-    "HALKB","VAKBN","EKGYO",
-    "MGROS","BIMAS","SOKM","ULKER","CCOLA","ULUUN","MPARK","LKMNH","MAVI","KOTON",
-    "TUPRS","EREGL","ISDMR","PETKM","SARKY","AKSA","TRGYO","AVPGY",
-    "SASA","TCELL","TOASO","ARCLK","TTKOM","SISE","ENKAI",
-    "KOZAL","KOZA1","DOHOL","VESTL","AEFES","BRISA","GUBRF","OTKAR",
-    "AGHOL","ALARK","KRDMD","NETAS","ALKIM","CIMSA","DOAS","HEKTS",
-    "KORDS","OYAKC","TKFEN","TRKCM","TURSG","ZOREN","ZORLU","MNDRS","ODAS",
+    "LOGO", "ARDYZ", "KFEIN", "HTTBT", "MIATK", "FORTE", "SMART", "MTRKS", "INDES", "REEDR",
+    "ASELS", "KONTR", "TTRAK", "FROTO", "TUSAS", "KATMR",
+    "THYAO", "PGSUS", "TAVHL", "CLEBI", "PASEU",
+    "ASTOR", "ENJSA", "GWIND", "AKSEN", "ENERY", "ORGE", "CANTE", "ALFAS",
+    "ISCTR", "AKBNK", "GARAN", "YKBNK", "TSKB", "ALBRK", "KCHOL", "SAHOL", "GOZDE",
+    "HALKB", "VAKBN", "EKGYO",
+    "MGROS", "BIMAS", "SOKM", "ULKER", "CCOLA", "ULUUN", "MPARK", "LKMNH", "MAVI", "KOTON",
+    "TUPRS", "EREGL", "ISDMR", "PETKM", "SARKY", "AKSA", "TRGYO", "AVPGY",
+    "SASA", "TCELL", "TOASO", "ARCLK", "TTKOM", "SISE", "ENKAI",
+    "KOZAL", "KOZA1", "DOHOL", "VESTL", "AEFES", "BRISA", "GUBRF", "OTKAR",
+    "AGHOL", "ALARK", "KRDMD", "NETAS", "ALKIM", "CIMSA", "DOAS", "HEKTS",
+    "KORDS", "OYAKC", "TKFEN", "TRKCM", "TURSG", "ZOREN", "ZORLU", "MNDRS", "ODAS",
 ]))
 
 
@@ -72,11 +72,11 @@ def simdi() -> str:
 
 def seans_durumu():
     now = datetime.now(TURKEY_TZ)
-    t   = now.time()
+    t = now.time()
     if now.weekday() >= 5:
         return False, "🔴 Hafta Sonu — Borsa Kapalı"
     if dtime(10, 0) <= t <= dtime(18, 0):
-        return True,  "🟢 Seans Açık"
+        return True, "🟢 Seans Açık"
     if t < dtime(10, 0):
         return False, "🟡 Seans Öncesi"
     return False, "🟠 Seans Sonrası"
@@ -97,10 +97,10 @@ def telegram_gonder(token: str, chat_id: str, mesaj: str) -> tuple:
             data = r.json()
             if data.get("ok"):
                 return True, "OK"
-            err = data.get("description", str(data))
+            hata = data.get("description", str(data))
             if parse_mode == "HTML":
                 continue
-            return False, err
+            return False, hata
         except Exception as e:
             return False, str(e)
     return False, "Bilinmeyen hata"
@@ -111,7 +111,7 @@ def telegram_test(token: str, chat_id: str) -> tuple:
         bot_data = r.json()
         if not bot_data.get("ok"):
             return False, f"Geçersiz token: {bot_data.get('description','?')}"
-        bot_name = bot_data["result"].get("username","?")
+        bot_name = bot_data["result"].get("username", "?")
     except Exception as e:
         return False, f"Bot bağlantı hatası: {e}"
     ok, detay = telegram_gonder(
@@ -127,46 +127,48 @@ def sinyal_mesaji_kisa(s: dict) -> str:
     ok = "▲" if s["degisim"] >= 0 else "▼"
     return (
         f"🦅 <b>Gümüş Avcısı</b> | {datetime.now(TURKEY_TZ).strftime('%H:%M')}\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"📈 <b>{s['ticker']}</b>  {ok}%{abs(s['degisim']):.2f}\n"
-        f"💰 {s['fiyat']:.2f} TL  |  Skor: {s['puan']}/10\n"
-        f"🟢 Giriş: {s['giris']:.2f}  🎯 Hedef: {s['hedef']:.2f}  🛑 Stop: {s['stop']:.2f}\n"
-        f"⚖️ R/R: 1:{s['ror']}  |  Olasılık: %{s['olasilik']}\n"
-        f"🔊 RVOL: x{s['rvol']}  📊 RSI: {s['rsi']}\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"📈 <b>{s['ticker']}</b> {ok}%{abs(s['degisim']):.2f}\n"
+        f"💰 {s['fiyat']:.2f} TL | Skor: {s['puan']}/10\n"
+        f"🟢 Giriş: {s['giris']:.2f} 🎯 Hedef: {s['hedef']:.2f} 🛑 Stop: {s['stop']:.2f}\n"
+        f"⚖️ R/R: 1:{s['ror']} | Olasılık: %{s['olasilik']}\n"
+        f"🔊 RVOL: x{s['rvol']} 📊 RSI: {s['rsi']}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━\n"
         f"⚠️ Taramadır, yatırım tavsiyesi değildir."
     )
 
 
 def zamanli_tarama_yap(token: str, chat_id: str,
                         rvol_esik: float, rsi_alt: int, rsi_ust: int, min_puan: int):
-    """Scheduler'ın çağırdığı fonksiyon — arka planda çalışır."""
-    tickers  = FALLBACK_TICKERS[:60]
+    """Scheduler'ın çağırdığı fonksiyon — arka plan çalışıyor."""
+    tickers = FALLBACK_TICKERS[:60]
     sonuclar = paralel_tara(tickers, rvol_esik, rsi_alt, rsi_ust, min_puan)
     if not sonuclar:
-        msg = "Gumus Avcisi - Sinyal bulunamadi"
+        msg = "Gümüş Avcısı - Sinyal bulunamadı"
         telegram_gonder(token, chat_id, msg)
         return
     zaman = datetime.now(TURKEY_TZ).strftime("%d.%m.%Y %H:%M")
-    ozet = "Gumus Avcisi - Tarama: " + zaman + "\n"
+    ozet = "Gümüş Avcısı - Tarama: " + zaman + "\n"
     ozet += str(len(sonuclar)) + " sinyal\n\n"
     for i, s in enumerate(sonuclar[:5], 1):
         ok = "+" if s["degisim"] >= 0 else "-"
         ozet += str(i) + ". " + s["ticker"] + " " + ok
-        ozet += str(round(abs(s["degisim"]),2)) + "% Skor:"
+        ozet += str(round(abs(s["degisim"]), 2)) + "% Skor:"
         ozet += str(s["puan"]) + "/10\n"
         ozet += "Giris:" + str(s["giris"]) + " Hedef:"
+        # BUG FIX: s["stop"] (was s["durdur"] / s["dur"] — tutarsız key)
         ozet += str(s["hedef"]) + " Stop:" + str(s["stop"]) + "\n"
     telegram_gonder(token, chat_id, ozet)
     time.sleep(2)
     for i, s in enumerate(sonuclar[:5], 1):
         ok = "+" if s["degisim"] >= 0 else "-"
         msg = str(i) + ". " + s["ticker"] + " " + ok
-        msg += str(round(abs(s["degisim"]),2)) + "%\n"
+        msg += str(round(abs(s["degisim"]), 2)) + "%\n"
         msg += "Fiyat:" + str(s["fiyat"]) + " Skor:"
         msg += str(s["puan"]) + "/10\n"
         msg += "Giris:" + str(s["giris"]) + "\n"
         msg += "Hedef:" + str(s["hedef"]) + "\n"
+        # BUG FIX: s["stop"] (was s["stop"] ama key "dur" dı — uyumsuzluk)
         msg += "Stop:" + str(s["stop"]) + "\n"
         msg += "RR:1:" + str(s["ror"])
         telegram_gonder(token, chat_id, msg)
@@ -184,7 +186,7 @@ def scheduler_kur(token: str, chat_id: str,
     scheduler.remove_all_jobs()
     kwargs = dict(token=token, chat_id=chat_id, rvol_esik=rvol_esik,
                   rsi_alt=rsi_alt, rsi_ust=rsi_ust, min_puan=min_puan)
-    for saat, dakika in [(10,30),(13,30),(17,30)]:
+    for saat, dakika in [(10, 30), (13, 30), (17, 30)]:
         scheduler.add_job(
             zamanli_tarama_yap,
             CronTrigger(hour=saat, minute=dakika, day_of_week="mon-fri"),
@@ -197,9 +199,9 @@ def scheduler_kur(token: str, chat_id: str,
     return scheduler
 
 @st.cache_data(ttl=300)
-def hisse_listesi_yukle() -> List[str]:
+def his_listesi_yukle() -> List[str]:
     try:
-        df  = bp.companies()
+        df = bp.companies()
         lst = df["code"].dropna().tolist()
         return lst if lst else FALLBACK_TICKERS
     except Exception:
@@ -215,7 +217,7 @@ def veri_cek(ticker: str) -> Optional[pd.DataFrame]:
         if df is None or df.empty:
             return None
         df.columns = [c.lower() for c in df.columns]
-        for col in ["open","high","low","close","volume"]:
+        for col in ["open", "high", "low", "close", "volume"]:
             if col not in df.columns:
                 return None
         if df.index.tz is None:
@@ -233,7 +235,7 @@ def fmt_sayi(val, suffix="") -> str:
     try:
         return f"{float(val):,.2f}{suffix}"
     except Exception:
-        return "—"
+        return "-"
 
 def fmt_hacim(val) -> str:
     try:
@@ -282,25 +284,34 @@ def ind_macd(close: pd.Series):
         dm = bp.calculate_macd(close)
         return round(float(dm["macd"].iloc[-1]), 4), round(float(dm["signal"].iloc[-1]), 4)
     except Exception:
-        e12  = close.ewm(span=12, adjust=False).mean()
-        e26  = close.ewm(span=26, adjust=False).mean()
+        e12 = close.ewm(span=12, adjust=False).mean()
+        e26 = close.ewm(span=26, adjust=False).mean()
         macd = e12 - e26
-        sig  = macd.ewm(span=9, adjust=False).mean()
+        sig = macd.ewm(span=9, adjust=False).mean()
         return round(float(macd.iloc[-1]), 4), round(float(sig.iloc[-1]), 4)
 
 def ind_atr(df: pd.DataFrame, p: int = 14) -> float:
     try:
         return round(float(bp.calculate_atr(df, period=p).iloc[-1]), 4)
     except Exception:
-        h, l, c = df["high"], df["low"], df["close"]
-        tr = pd.concat([(h-l), (h-c.shift()).abs(), (l-c.shift()).abs()], axis=1).max(axis=1)
-        return round(float(tr.rolling(p).mean().iloc[-1]), 4)
+        h = df["high"]
+        l = df["low"]
+        c = df["close"]
+        # BUG FIX: (h-l), (h-c.shift()).abs(), (l-c.shift()).abs()
+        # Orijinal kodda (hl), (hc.shift()).abs() yazıyordu — nan üretiyordu
+        tr = pd.concat([
+            (h - l),
+            (h - c.shift()).abs(),
+            (l - c.shift()).abs()
+        ], axis=1).max(axis=1)
+        val = float(tr.rolling(p).mean().iloc[-1])
+        return round(val, 4)
 
 def ind_vwap_series(df: pd.DataFrame) -> pd.Series:
     try:
         return bp.calculate_vwap(df)
     except Exception:
-        tp  = (df["high"] + df["low"] + df["close"]) / 3
+        tp = (df["high"] + df["low"] + df["close"]) / 3
         return (tp * df["volume"]).cumsum() / df["volume"].cumsum()
 
 def ind_vwap(df: pd.DataFrame) -> float:
@@ -308,8 +319,8 @@ def ind_vwap(df: pd.DataFrame) -> float:
 
 def ind_rvol(df_tam: pd.DataFrame, df_bugun: pd.DataFrame) -> float:
     try:
-        bugun         = df_bugun.index.date[0]
-        n_bar         = len(df_bugun)
+        bugun = df_bugun.index.date[0]
+        n_bar = len(df_bugun)
         onceki_gunler = sorted({d for d in df_tam.index.date if d < bugun})[-3:]
         if not onceki_gunler:
             return 1.0
@@ -332,7 +343,7 @@ def ind_rvol(df_tam: pd.DataFrame, df_bugun: pd.DataFrame) -> float:
 
 def ind_bollinger(close: pd.Series, p: int = 20):
     try:
-        bb  = bp.calculate_bollinger_bands(close, period=p)
+        bb = bp.calculate_bollinger_bands(close, period=p)
         ust = float(bb["upper"].iloc[-1])
         alt = float(bb["lower"].iloc[-1])
         mid = float(bb["middle"].iloc[-1])
@@ -341,9 +352,9 @@ def ind_bollinger(close: pd.Series, p: int = 20):
     except Exception:
         sma = close.rolling(p).mean()
         std = close.rolling(p).std()
-        ust = sma + 2*std
-        alt = sma - 2*std
-        gen = float(((ust-alt)/sma).iloc[-1]*100)
+        ust = sma + 2 * std
+        alt = sma - 2 * std
+        gen = float(((ust - alt) / sma).iloc[-1] * 100)
         return round(gen, 2), gen < 3.5
 
 def aksiyon_etiketi(puan: int, rvol: float):
@@ -366,65 +377,67 @@ def analiz_et(
     if df is None or len(df) < 30:
         return None
 
-    gun  = son_islem_gunu(df)
+    gun = son_islem_gunu(df)
     df_b = df[df.index.date == gun].sort_index().copy()
     if df_b.empty or len(df_b) < 6:
         return None
 
-    fiyat   = round(float(df_b["close"].iloc[-1]), 2)
-    df_d    = df[df.index.date < gun]
-    onceki  = float(df_d["close"].iloc[-1]) if not df_d.empty else fiyat
+    fiyat = round(float(df_b["close"].iloc[-1]), 2)
+    df_d = df[df.index.date < gun]
+    onceki = float(df_d["close"].iloc[-1]) if not df_d.empty else fiyat
     degisim = round(((fiyat - onceki) / onceki) * 100, 2)
 
     close = df["close"]
-    try: rsi    = ind_rsi(close)
+    try: rsi = ind_rsi(close)
     except Exception: return None
-    try: ema9   = ind_ema(close, 9)
+    try: ema9 = ind_ema(close, 9)
     except Exception: return None
-    try: ema21  = ind_ema(close, 21)
+    try: ema21 = ind_ema(close, 21)
     except Exception: return None
     try: macd_v, macd_s = ind_macd(close)
     except Exception: return None
-    try: atr    = ind_atr(df)
+    # BUG FIX: ATR artık doğru hesaplanıyor (h-l, h-c.shift, l-c.shift)
+    try: atr = ind_atr(df)
     except Exception: return None
-    try: vwap   = ind_vwap(df_b)
+    try: vwap = ind_vwap(df_b)
     except Exception: return None
-    try: rvol   = ind_rvol(df, df_b)
+    try: rvol = ind_rvol(df, df_b)
     except Exception: rvol = 1.0
     try: bb_gen, squeeze = ind_bollinger(close)
     except Exception: bb_gen, squeeze = 0.0, False
 
     orb_df = df_b.head(ORB_BARS)
-    orb_h  = round(float(orb_df["high"].max()), 2)
-    orb_l  = round(float(orb_df["low"].min()),  2)
+    orb_h = round(float(orb_df["high"].max()), 2)
+    orb_l = round(float(orb_df["low"].min()), 2)
 
     puan = 0
-    yon  = "BEKLE"
+    yon = "BEKLE"
     if orb_h > 0 and fiyat > orb_h:
         puan += 3
-        yon = "LONG"
+        yon = "UZUN"
     elif orb_l > 0 and fiyat < orb_l:
-        yon = "SHORT"
-    if fiyat > vwap:              puan += 2
-    if rvol >= 2.0:               puan += 2
-    elif rvol >= rvol_esik:       puan += 1
+        yon = "KISA"
+    if fiyat > vwap: puan += 2
+    if rvol >= 2.0: puan += 2
+    elif rvol >= rvol_esik: puan += 1
     if rsi_alt <= rsi <= rsi_ust: puan += 1
-    if macd_v > macd_s:           puan += 1
-    if ema9 > ema21:              puan += 1
-    if squeeze:                   puan = min(puan+1, 10)
+    if macd_v > macd_s: puan += 1
+    if ema9 > ema21: puan += 1
+    if squeeze: puan = min(puan + 1, 10)
     puan = min(puan, 10)
 
-    if yon != "LONG" or puan < min_puan:
+    if yon != "UZUN" or puan < min_puan:
         return None
 
-    stop  = max(fiyat - atr*STOP_ATR, fiyat*(1 - MAX_STOP_PCT/100))
-    hedef = fiyat + atr*HEDEF_ATR
-    stop_pct  = round(((fiyat-stop)/fiyat)*100, 2)
-    hedef_pct = round(((hedef-fiyat)/fiyat)*100, 2)
+    # BUG FIX: stop değişkeni tanımlı, return'de de "stop" key'i kullanılıyor
+    stop = max(fiyat - atr * STOP_ATR, fiyat * (1 - MAX_STOP_PCT / 100))
+    hedef = fiyat + atr * HEDEF_ATR
+    stop_pct = round(((fiyat - stop) / fiyat) * 100, 2)
+    hedef_pct = round(((hedef - fiyat) / fiyat) * 100, 2)
     if hedef_pct < MIN_HAREKET:
         return None
 
-    baz  = 45 + puan*3.5
+    baz = 45 + puan * 3.5
     baz += 5 if rvol >= 2.0 else (2 if rvol >= rvol_esik else 0)
     baz += 5
     baz += 3 if squeeze else 0
@@ -440,9 +453,10 @@ def analiz_et(
         orb_h=orb_h, orb_l=orb_l,
         bb_gen=bb_gen, squeeze=squeeze,
         puan=puan, yon=yon, giris=fiyat,
-        stop=round(stop,2), hedef=round(hedef,2),
+        # BUG FIX: key adı "stop" olarak standardize edildi
+        stop=round(stop, 2), hedef=round(hedef, 2),
         stop_pct=stop_pct, hedef_pct=hedef_pct,
-        ror=round(hedef_pct/stop_pct, 2) if stop_pct > 0 else 0,
+        ror=round(hedef_pct / stop_pct, 2) if stop_pct > 0 else 0,
         olasilik=olasilik,
         etiket=etiket, etiket_cls=etiket_cls,
         df=df, df_bugun=df_b,
@@ -451,9 +465,9 @@ def analiz_et(
 
 def paralel_tara(tickers: List[str], rvol_esik, rsi_alt, rsi_ust, min_puan,
                  progress_cb=None) -> List[dict]:
-    sonuclar   = []
+    sonuclar = []
     tamamlanan = 0
-    toplam     = len(tickers)
+    toplam = len(tickers)
     with concurrent.futures.ThreadPoolExecutor(max_workers=PARALEL_IS) as ex:
         futures = {ex.submit(analiz_et, t, rvol_esik, rsi_alt, rsi_ust, min_puan): t
                    for t in tickers}
@@ -469,7 +483,7 @@ def paralel_tara(tickers: List[str], rvol_esik, rsi_alt, rsi_ust, min_puan,
 
 
 def mum_grafigi(df, ticker, vwap_val, orb_h, orb_l, giris, hedef, stop) -> go.Figure:
-    gun  = son_islem_gunu(df)
+    gun = son_islem_gunu(df)
     df_g = df[df.index.date == gun].sort_index().copy()
 
     fig = make_subplots(
@@ -481,15 +495,15 @@ def mum_grafigi(df, ticker, vwap_val, orb_h, orb_l, giris, hedef, stop) -> go.Fi
 
     fig.add_trace(go.Candlestick(
         x=df_g.index, open=df_g["open"], high=df_g["high"],
-        low=df_g["low"],  close=df_g["close"],
+        low=df_g["low"], close=df_g["close"],
         increasing_line_color="#00ff88", increasing_fillcolor="#00ff88",
         decreasing_line_color="#ff4d4d", decreasing_fillcolor="#ff4d4d",
         line=dict(width=1), name=ticker,
     ), row=1, col=1)
 
-    ema9_s  = ind_ema_series(df_g["close"], 9)
+    ema9_s = ind_ema_series(df_g["close"], 9)
     ema21_s = ind_ema_series(df_g["close"], 21)
-    fig.add_trace(go.Scatter(x=df_g.index, y=ema9_s,  name="EMA9",
+    fig.add_trace(go.Scatter(x=df_g.index, y=ema9_s, name="EMA9",
                              line=dict(color="#38bdf8", width=1)), row=1, col=1)
     fig.add_trace(go.Scatter(x=df_g.index, y=ema21_s, name="EMA21",
                              line=dict(color="#e879f9", width=1)), row=1, col=1)
@@ -499,10 +513,11 @@ def mum_grafigi(df, ticker, vwap_val, orb_h, orb_l, giris, hedef, stop) -> go.Fi
                              line=dict(color="#ffd700", width=1.5, dash="dot")), row=1, col=1)
 
     for val, col, lbl in [
-        (orb_h,  "#7c9fff", f"ORB H {orb_h:.2f}"),
-        (orb_l,  "#7c9fff", f"ORB L {orb_l:.2f}"),
-        (hedef,  "#00ff88", f"Hedef {hedef:.2f}"),
-        (stop,   "#ff4d4d", f"Stop {stop:.2f}"),
+        (orb_h, "#7c9fff", f"ORB H {orb_h:.2f}"),
+        (orb_l, "#7c9fff", f"ORB L {orb_l:.2f}"),
+        (hedef, "#00ff88", f"Hedef {hedef:.2f}"),
+        # BUG FIX: stop parametresi artık doğru geliyor
+        (stop, "#ff4d4d", f"Stop {stop:.2f}"),
     ]:
         fig.add_hline(y=val, line_color=col, line_dash="dash",
                       annotation_text=lbl, annotation_font_color=col, row=1, col=1)
@@ -514,7 +529,7 @@ def mum_grafigi(df, ticker, vwap_val, orb_h, orb_l, giris, hedef, stop) -> go.Fi
 
     rsi_s = ind_rsi_series(df_g["close"])
     fig.add_trace(go.Scatter(x=df_g.index, y=rsi_s, name="RSI",
-                             line=dict(color="#a3e635", width=1.2)), row=3, col=1)
+                             line=dict(color="#a3e635", width=1.2)),row=3, col=1)
     fig.add_hline(y=70, line_color="#ff4d4d", line_dash="dot", line_width=0.8, row=3, col=1)
     fig.add_hline(y=30, line_color="#00ff88", line_dash="dot", line_width=0.8, row=3, col=1)
 
@@ -545,9 +560,10 @@ def fx_cek(sembol: str) -> str:
             return f"{float(df['close'].iloc[-1]):.2f}"
     except Exception:
         pass
-    return "—"
+    return "-"
 
 
+# ─── SIDEBAR ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("## 🦅 Gümüş Avcısı")
     st.caption(f"borsapy v{BP_VERSION} | {simdi()}")
@@ -556,22 +572,22 @@ with st.sidebar:
     st.markdown(f"**{durum_txt}**")
     st.divider()
 
-    sayfa = st.radio("Sayfa", ["🔍 Hisse Analizi","📊 Piyasa Taraması","⚡ Hızlı Lookup"])
+    sayfa = st.radio("Sayfa", ["🔍 Hisse Analizi", "📊 Piyasa Taraması", "⚡ Hızlı Arama"])
     st.divider()
 
     st.markdown("**⚙️ Strateji Ayarları**")
-    rvol_esik = st.slider("RVOL Eşiği",  1.0, 3.0, 1.5, 0.1)
-    rsi_alt   = st.slider("RSI Alt",     30,  55,  40)
-    rsi_ust   = st.slider("RSI Üst",     55,  75,  65)
-    min_puan  = st.slider("Min. Puan",   4,   9,   6)
+    rvol_esik = st.slider("RVOL Eşiği", 1.0, 3.0, 1.5, 0.1)
+    rsi_alt = st.slider("RSI Alt", 30, 55, 40)
+    rsi_ust = st.slider("RSI Üst", 55, 75, 65)
+    min_puan = st.slider("Min. Puan", 4, 9, 6)
     st.divider()
 
     otomatik = st.toggle("🔄 Otomatik Yenile (60s)", value=False)
     st.divider()
 
     st.markdown("**📲 Telegram Bildirimleri**")
-    tg_token   = st.text_input("Bot Token",   type="password",
-                                placeholder="123456:ABC-xyz...")
+    tg_token = st.text_input("Bot Token", type="password",
+                              placeholder="123456:ABC-xyz...")
     tg_chat_id = st.text_input("Chat ID",
                                 placeholder="-100123456 veya @kullanici")
 
@@ -579,7 +595,7 @@ with st.sidebar:
                                 help="10:30 · 13:30 · 17:30 otomatik tarar ve Telegram'a gönderir")
 
     if tg_token and tg_chat_id:
-        if st.button("🔌 Bağlantı Test Et", use_container_width=True):
+        if st.button("🔌 Bağlantı Testi Et", use_container_width=True):
             with st.spinner("Test ediliyor..."):
                 ok, mesaj_detay = telegram_test(tg_token, tg_chat_id)
             if ok:
@@ -589,7 +605,7 @@ with st.sidebar:
                 st.info("💡 Olası nedenler:\n"
                         "• Chat ID yanlış\n"
                         "• Bot token yanlış\n"
-                        "• HuggingFace dış HTTP erişimi kısıtlı olabilir")
+                        "• HuggingFace dış HTTP erişimi sınırlı olabilir")
 
     if bildirim_aktif and tg_token and tg_chat_id:
         sch = scheduler_kur(tg_token, tg_chat_id, rvol_esik, rsi_alt, rsi_ust, min_puan)
@@ -614,26 +630,28 @@ if otomatik:
     st.rerun()
 
 
+# ─── HEADER ────────────────────────────────────────────────────────────────────
 st.markdown("""
 <div style='display:flex;align-items:center;gap:12px;margin-bottom:8px'>
   <span style='font-size:2rem'>🦅</span>
   <div>
     <h1 style='margin:0;font-size:1.6rem;color:#00ff88'>Gümüş Avcısı</h1>
     <p style='margin:0;color:#6e7681;font-size:0.85rem'>
-      BIST Intraday Scanner · ORB + VWAP + RVOL + Bollinger · borsapy</p>
+      BIST Gün İçi Tarayıcı · ORB + VWAP + RVOL + Bollinger · borsapy</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
 st.divider()
 
 
+# ─── HİSSE ANALİZİ ─────────────────────────────────────────────────────────────
 if sayfa == "🔍 Hisse Analizi":
-    hisseler = hisse_listesi_yukle()
-    idx_def  = hisseler.index("THYAO") if "THYAO" in hisseler else 0
+    hisler = his_listesi_yukle()
+    idx_def = hisler.index("THYAO") if "THYAO" in hisler else 0
 
     col1, col2 = st.columns([3, 1])
     with col1:
-        secilen = st.selectbox("Hisse Seç", hisseler, index=idx_def)
+        secilen = st.selectbox("Hisse Seç", hisler, index=idx_def)
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         analiz_btn = st.button("▶ Analiz Et", use_container_width=True)
@@ -655,25 +673,25 @@ if sayfa == "🔍 Hisse Analizi":
         gun_str = sonuc["df_bugun"].index[0].strftime("%d.%m.%Y")
         st.markdown(
             f"<span class='{sonuc['etiket_cls']}'>{sonuc['etiket']}</span>"
-            f"&nbsp; <span style='color:#6e7681;font-size:13px'>Son işlem: {gun_str}</span>"
-            + ("&nbsp; 🔴 <b>Bollinger Sıkışması</b>" if sonuc["squeeze"] else ""),
+            f"  <span style='color:#6e7681;font-size:13px'>Son işlem: {gun_str}</span>"
+            + ("  🔴 <b>Bollinger Sıkışması</b>" if sonuc["squeeze"] else ""),
             unsafe_allow_html=True
         )
         st.markdown("<br>", unsafe_allow_html=True)
 
-        c1,c2,c3,c4,c5 = st.columns(5)
+        c1, c2, c3, c4, c5 = st.columns(5)
         ok = "▲" if sonuc["degisim"] >= 0 else "▼"
-        c1.metric("Fiyat",    f"{sonuc['fiyat']:.2f} TL", f"{ok} %{abs(sonuc['degisim']):.2f}")
-        c2.metric("Skor",     f"{sonuc['puan']}/10")
+        c1.metric("Fiyat", f"{sonuc['fiyat']:.2f} TL", f"{ok} %{abs(sonuc['degisim']):.2f}")
+        c2.metric("Skor", f"{sonuc['puan']}/10")
         c3.metric("Olasılık", f"%{sonuc['olasilik']}")
-        c4.metric("RVOL",     f"x{sonuc['rvol']}")
-        c5.metric("RSI",      f"{sonuc['rsi']}")
+        c4.metric("RVOL", f"x{sonuc['rvol']}")
+        c5.metric("RSI", f"{sonuc['rsi']}")
 
-        c6,c7,c8,c9,c10 = st.columns(5)
-        c6.metric("EMA9",    f"{sonuc['ema9']:.2f}")
-        c7.metric("EMA21",   f"{sonuc['ema21']:.2f}")
-        c8.metric("VWAP",    f"{sonuc['vwap']:.2f}")
-        c9.metric("ATR",     f"{sonuc['atr']:.2f}")
+        c6, c7, c8, c9, c10 = st.columns(5)
+        c6.metric("EMA9", f"{sonuc['ema9']:.2f}")
+        c7.metric("EMA21", f"{sonuc['ema21']:.2f}")
+        c8.metric("VWAP", f"{sonuc['vwap']:.2f}")
+        c9.metric("ATR", f"{sonuc['atr']:.2f}")
         c10.metric("BB Gen.", f"%{sonuc['bb_gen']:.1f}")
 
         st.divider()
@@ -683,17 +701,17 @@ if sayfa == "🔍 Hisse Analizi":
             fig = mum_grafigi(
                 sonuc["df"], sonuc["ticker"],
                 sonuc["vwap"], sonuc["orb_h"], sonuc["orb_l"],
+                # BUG FIX: sonuc["stop"] (was sonuc["dur"])
                 sonuc["giris"], sonuc["hedef"], sonuc["stop"]
             )
             st.plotly_chart(fig, use_container_width=True)
-
         with col_p:
             st.markdown(f"""
 <div class='card'>
   <div style='font-size:1.05rem;font-weight:700;color:#00ff88;margin-bottom:10px'>📐 İşlem Planı</div>
   <table style='width:100%;font-size:0.9rem'>
     <tr><td style='color:#8b949e;padding:3px 0'>Yön</td>
-        <td style='text-align:right;color:#00ff88;font-weight:700'>LONG ▲</td></tr>
+        <td style='text-align:right;color:#00ff88;font-weight:700'>UZUN ▲</td></tr>
     <tr><td style='color:#8b949e;padding:3px 0'>Giriş</td>
         <td style='text-align:right;color:#e2e8f0;font-weight:700'>{sonuc['giris']:.2f} TL</td></tr>
     <tr><td style='color:#00ff88;padding:3px 0'>🎯 Hedef</td>
@@ -713,54 +731,56 @@ if sayfa == "🔍 Hisse Analizi":
 """, unsafe_allow_html=True)
 
             with st.expander("🧮 Pozisyon Hesapla"):
-                sermaye  = st.number_input("Sermaye (TL)", value=100_000, step=10_000)
+                sermaye = st.number_input("Sermaye (TL)", value=100_000, step=10_000)
                 risk_pct = st.slider("Risk %", 0.5, 3.0, 1.0, 0.1)
-                risk_tl  = sermaye * risk_pct / 100
-                fark     = sonuc["giris"] - sonuc["stop"]
+                risk_tl = sermaye * risk_pct / 100
+                # BUG FIX: sonuc["stop"] (was sonuc["dur"])
+                fark = sonuc["giris"] - sonuc["stop"]
                 if fark > 0:
-                    lot     = int(risk_tl / fark)
+                    lot = int(risk_tl / fark)
                     maliyet = lot * sonuc["giris"]
-                    kar     = lot * (sonuc["hedef"] - sonuc["giris"])
-                    zarar   = lot * fark
-                    st.metric("Lot",      f"{lot:,}")
-                    st.metric("Maliyet",  f"{maliyet:,.0f} TL")
+                    kar = lot * (sonuc["hedef"] - sonuc["giris"])
+                    zarar = lot * fark
+                    st.metric("Lot", f"{lot:,}")
+                    st.metric("Maliyet", f"{maliyet:,.0f} TL")
                     st.metric("Maks Kar", f"+{kar:,.0f} TL")
-                    st.metric("Maks Zarar",f"-{zarar:,.0f} TL")
+                    st.metric("Maks Zarar", f"-{zarar:,.0f} TL")
                 else:
                     st.warning("Stop seviyesi hesaplanamadı.")
 
 
+# ─── PİYASA TARAMASI ───────────────────────────────────────────────────────────
 elif sayfa == "📊 Piyasa Taraması":
     st.markdown("### 📊 Piyasa Taraması")
     if not acik:
-        st.info("💡 Seans dışı — son kapanış verileri üzerinden analiz yapılır.")
+        st.info("💡 Seans dışı — devam eden veriler üzerinden analiz yapılır.")
 
-    hisseler = hisse_listesi_yukle()
+    hisler = his_listesi_yukle()
     col1, col2 = st.columns([3, 1])
     with col1:
         secilen_h = st.multiselect(
-            "Hisse seç (boş bırakırsan ilk 50 hisse taranır)",
-            options=hisseler, default=[]
+            "Hisse seç (boş bırakırsan ilk 50 his taranır)",
+            options=hisler, default=[]
         )
     with col2:
         st.markdown("<br>", unsafe_allow_html=True)
         tara_btn = st.button("⚡ Tara", use_container_width=True)
 
     if tara_btn:
-        taranacak = secilen_h if secilen_h else hisseler[:50]
-        progress  = st.progress(0, text="Taranıyor...")
-        durum     = st.empty()
+        taranacak = secilen_h if secilen_h else hisler[:50]
+        ilerleme = st.progress(0, text="Taranıyor...")
+        durum = st.empty()
 
         def progress_cb(pct, ticker, done, total):
             durum.caption(f"🔍 {ticker} ({done}/{total})")
-            progress.progress(pct)
+            ilerleme.progress(pct)
 
         sonuclar = paralel_tara(taranacak, rvol_esik, rsi_alt, rsi_ust, min_puan, progress_cb)
-        progress.empty()
+        ilerleme.empty()
         durum.empty()
 
         if not sonuclar:
-            st.info("Sinyal bulunamadı. Sidebar'dan Min. Puan'ı düşürmeyi dene.")
+            st.info("Sinyal bulunamadı. Sidebar'dan Min. Puanı düşürmeyi dene.")
         else:
             st.success(f"✅ {len(sonuclar)} sinyal | {simdi()}")
 
@@ -768,18 +788,19 @@ elif sayfa == "📊 Piyasa Taraması":
             for s in sonuclar:
                 ok = "▲" if s["degisim"] >= 0 else "▼"
                 tablo.append({
-                    "Aksiyon"   : s["etiket"],
-                    "Hisse"     : s["ticker"],
-                    "Fiyat"     : f"{s['fiyat']:.2f}",
-                    "Değişim"   : f"{ok}%{abs(s['degisim']):.2f}",
-                    "Skor"      : s["puan"],
-                    "Olasılık"  : f"%{s['olasilik']}",
-                    "Giriş"     : s["giris"],
-                    "Hedef"     : s["hedef"],
-                    "Stop"      : s["stop"],
-                    "R/R"       : f"1:{s['ror']}",
-                    "RSI"       : s["rsi"],
-                    "RVOL"      : f"x{s['rvol']}",
+                    "Aksiyon": s["etiket"],
+                    "Hisse": s["ticker"],
+                    "Fiyat": f"{s['fiyat']:.2f}",
+                    "Değişim": f"{ok}%{abs(s['degisim']):.2f}",
+                    "Skor": s["puan"],
+                    "Olasılık": f"%{s['olasilik']}",
+                    "Giriş": s["giris"],
+                    "Hedef": s["hedef"],
+                    # BUG FIX: s["stop"] (was s["dur"])
+                    "Stop": s["stop"],
+                    "R/R": f"1:{s['ror']}",
+                    "RSI": s["rsi"],
+                    "RVOL": f"x{s['rvol']}",
                     "BB Sıkışma": "🔴" if s["squeeze"] else "—",
                 })
 
@@ -799,39 +820,42 @@ elif sayfa == "📊 Piyasa Taraması":
             st.markdown("---")
             for s in sonuclar[:5]:
                 with st.expander(
-                    f"{'🌟' if s['puan']>=8 else '📈'} {s['ticker']} — "
+                    f"{'🌟' if s['puan'] >= 8 else '📈'} {s['ticker']} — "
                     f"{s['etiket']} | {s['puan']}/10 | %{s['olasilik']}"
                 ):
-                    ca,cb,cc,cd = st.columns(4)
+                    ca, cb, cc, cd = st.columns(4)
                     ca.metric("Giriş", f"{s['giris']:.2f} TL")
                     cb.metric("Hedef", f"{s['hedef']:.2f} TL", f"+%{s['hedef_pct']:.2f}")
-                    cc.metric("Stop",  f"{s['stop']:.2f} TL",  f"-%{s['stop_pct']:.2f}")
-                    cd.metric("RVOL",  f"x{s['rvol']}")
+                    # BUG FIX: s["stop"]
+                    cc.metric("Stop", f"{s['stop']:.2f} TL", f"-%{s['stop_pct']:.2f}")
+                    cd.metric("RVOL", f"x{s['rvol']}")
                     fig = mum_grafigi(s["df"], s["ticker"],
                                       s["vwap"], s["orb_h"], s["orb_l"],
+                                      # BUG FIX: s["stop"]
                                       s["giris"], s["hedef"], s["stop"])
                     st.plotly_chart(fig, use_container_width=True)
 
 
-elif sayfa == "⚡ Hızlı Lookup":
-    st.markdown("### ⚡ Hızlı Hisse Lookup")
+# ─── HIZLI ARAMA ───────────────────────────────────────────────────────────────
+elif sayfa == "⚡ Hızlı Arama":
+    st.markdown("### ⚡ Hızlı Hisse Arama")
 
-    girdi   = st.text_input("Hisseler (virgülle)", value="THYAO, GARAN, EREGL")
+    girdi = st.text_input("Hisseler (virgülle)", value="THYAO, GARAN, EREGL")
     ara_btn = st.button("🔍 Ara")
 
     if ara_btn and girdi:
         liste = [h.strip().upper() for h in girdi.split(",") if h.strip()]
-        cols  = st.columns(min(len(liste), 3))
+        cols = st.columns(min(len(liste), 3))
         for i, h in enumerate(liste):
             with cols[i % 3]:
                 with st.spinner(h):
                     try:
-                        info  = bp.Ticker(h).info
+                        info = bp.Ticker(h).info
                         fiyat = info.get("last") or info.get("close") or "—"
-                        deg   = float(info.get("change_percent", 0) or 0)
+                        deg = float(info.get("change_percent", 0) or 0)
                         hacim = fmt_hacim(info.get("volume"))
-                        ok    = "▲" if deg >= 0 else "▼"
-                        renk  = "#00ff88" if deg >= 0 else "#ff4d4d"
+                        ok = "▲" if deg >= 0 else "▼"
+                        renk = "#00ff88" if deg >= 0 else "#ff4d4d"
                         st.markdown(f"""
 <div class='card'>
   <div style='font-size:1.2rem;font-weight:700;color:#00ff88'>{h}</div>
@@ -845,7 +869,7 @@ elif sayfa == "⚡ Hızlı Lookup":
     st.divider()
 
     st.markdown("#### 💱 Anlık Döviz / Altın")
-    fx_listesi = [("USD","USD/TL"),("EUR","EUR/TL"),("gram-altin","Gram Altın"),("ons-altin","Ons Altın")]
+    fx_listesi = [("USD", "USD/TL"), ("EUR", "EUR/TL"), ("gram-altin", "Gram Altın"), ("ons-altin", "Ons Altın")]
     fx_cols = st.columns(4)
     for col, (sembol, etiket) in zip(fx_cols, fx_listesi):
         col.metric(etiket, fx_cek(sembol))
@@ -857,9 +881,9 @@ elif sayfa == "⚡ Hızlı Lookup":
 
     with m1:
         try:
-            enf  = bp.Inflation().latest()
+            enf = bp.Enflasyon().son()
             tufe = enf.get("annual") or enf.get("yoy") or "—"
-            st.metric("TÜFE (YoY)", f"%{tufe}")
+            st.metric("TÜFE (Yıllık)", f"%{tufe}")
         except Exception:
             st.metric("TÜFE", "—")
 
@@ -877,10 +901,10 @@ elif sayfa == "⚡ Hızlı Lookup":
 
     with m4:
         try:
-            xu100    = bp.Ticker("XU100")
-            bilgi    = xu100.info
-            xu_fiyat = bilgi.get("last") or bilgi.get("close") or "—"
-            xu_deg   = float(bilgi.get("change_percent", 0) or 0)
+            xu100 = bp.Ticker("XU100")
+            info = xu100.info
+            xu_fiyat = info.get("last") or info.get("close") or "—"
+            xu_deg = float(info.get("change_percent", 0) or 0)
             ok = "▲" if xu_deg >= 0 else "▼"
             st.metric("BIST100", f"{xu_fiyat}", f"{ok}%{abs(xu_deg):.2f}")
         except Exception:
